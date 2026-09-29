@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.fig-brush/plot-spec-1.0.json",
+  "title": "fig-brushSpec",
+  "type": "object",
+  "required": ["schema_version", "graph_family", "data_mapping", "statistics", "axes", "style", "output"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "graph_family": {
+      "enum": ["column", "grouped_column", "scatter", "line", "box", "violin", "histogram", "heatmap", "regression"]
+    },
+    "data_model": {"type": ["string", "null"]},
+    "data_mapping": {"type": "object"},
+    "statistics": {"type": "object"},
+    "axes": {
+      "type": "object",
+      "properties": {
+        "x": {"$ref": "#/$defs/axis"},
+        "y": {"$ref": "#/$defs/axis"}
+      },
+      "additionalProperties": true
+    },
+    "legend": {"type": "object"},
+    "annotations": {"type": "object"},
+    "interpretation": {
+      "type": "object",
+      "description": "Auditable scientific reading of the data and reference cues.",
+      "properties": {
+        "analysis_version": {"type": "string"},
+        "data_model": {"type": ["string", "null"]},
+        "representation": {"type": "string"},
+        "experimental_unit": {"type": "string"},
+        "column_roles": {"type": "array"},
+        "mapping": {"type": "object"},
+        "candidate_graphs": {"type": "array"},
+        "recommended_graph": {"type": ["object", "null"]},
+        "signal_findings": {"type": "array"},
+        "limitations": {"type": "array", "items": {"type": "string"}},
+        "reference_visual_cues": {"type": "object"},
+        "scientific_context": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "page_aspect_ratio": {"type": "number", "exclusiveMinimum": 0},
+        "page_width_px": {"type": "number", "exclusiveMinimum": 0},
+        "open_zoom_percent": {"type": "number", "exclusiveMinimum": 0},
+        "open_window_state": {"type": "integer", "minimum": 1, "maximum": 4},
+        "open_viewmode": {"type": "integer", "minimum": 1, "maximum": 5},
+        "open_viewport_width_px": {"type": "number", "exclusiveMinimum": 0},
+        "open_viewport_height_px": {"type": "number", "exclusiveMinimum": 0},
+        "plot_frame": {"$ref": "#/$defs/plotFrame"},
+        "frame_sides": {
+          "type": "object",
+          "properties": {
+            "top": {"type": "boolean"},
+            "right": {"type": "boolean"},
+            "bottom": {"type": "boolean"},
+            "left": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "tick_direction": {"enum": ["out", "in", "both", "none"]},
+        "opposite_tick_direction": {"enum": ["out", "in", "both", "none"]},
+        "tick_label_font_pt": {"type": "number", "exclusiveMinimum": 0},
+        "axis_title_font_pt": {"type": "number", "exclusiveMinimum": 0},
+        "estimated_text_height_ratio": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "source_file": {"type": ["string", "null"]},
+    "source_table": {"type": ["string", "null"]},
+    "output": {
+      "type": "object",
+      "required": ["project_format", "preview_formats"],
+      "properties": {
+        "project_format": {"const": "opju"},
+        "preview_formats": {"type": "array", "items": {"enum": ["png", "svg", "pdf"]}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "plotFrame": {
+      "type": "object",
+      "properties": {
+        "left": {"type": "number", "minimum": 0, "maximum": 100},
+        "top": {"type": "number", "minimum": 0, "maximum": 100},
+        "right": {"type": "number", "minimum": 0, "maximum": 100},
+        "bottom": {"type": "number", "minimum": 0, "maximum": 100},
+        "aspect_ratio": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "axis": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string"},
+        "min": {"type": "number"},
+        "max": {"type": "number"},
+        "major_tick_increment": {"type": "number", "exclusiveMinimum": 0},
+        "major_tick_count": {"type": "integer", "minimum": 0},
+        "minor_tick_count": {"type": "integer", "minimum": 0},
+        "tick_label_font_pt": {"type": "number", "exclusiveMinimum": 0},
+        "title_font_pt": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

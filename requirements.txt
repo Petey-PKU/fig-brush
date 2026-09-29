@@ -1,0 +1,8 @@
+pandas>=2.0
+openpyxl>=3.1
+Pillow>=10.0
+scipy>=1.10
+jsonschema>=4.0
+mcp>=1.0,<2
+# originpro is supplied by OriginLab's Python package on supported Windows installations.
+# Install it in the same Python environment used to run the local MCP server when needed.

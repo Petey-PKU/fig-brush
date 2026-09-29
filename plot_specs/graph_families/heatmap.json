@@ -1,0 +1,6 @@
+{
+  "graph_family": "heatmap",
+  "origin_plot_type": "heatmap",
+  "data_requirements": ["numeric matrix or row/column labels"],
+  "supports": ["color scale", "cell labels", "clustering metadata"]
+}

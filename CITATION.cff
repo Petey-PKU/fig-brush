@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "fig-brush"
+message: "If fig-brush contributes to your work, please cite this release."
+type: software
+version: 0.3.1
+date-released: 2026-09-29
+authors:
+  - family-names: Yu
+    given-names: Petey
+    affiliation: Independent developer
+license: Apache-2.0
+abstract: >-
+  A Codex plugin and Python package that turns scientific figure references
+  into editable Origin templates with clearly labelled visual placeholders.

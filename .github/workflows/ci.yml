@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-package:
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.10', '3.12']
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install project and development dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Validate release metadata and source tree
+        run: python scripts/validate_release.py
+
+      - name: Build plugin ZIP and checksum
+        run: python scripts/package_plugin.py --dist dist
+
+      - name: Build Python wheel
+        run: python -m build --wheel --outdir wheelhouse
+
+      - name: Install wheel into the test environment
+        run: >-
+          python -c
+          "import glob, subprocess, sys; wheels=glob.glob('wheelhouse/*.whl');
+          assert wheels, 'wheel build produced no wheel';
+          subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', wheels[0]])"
+
+      - name: Verify package data from an isolated working directory
+        run: >-
+          python -c
+          "import importlib.resources as r, os, tempfile;
+          os.chdir(tempfile.mkdtemp());
+          assert r.files('plot_specs').joinpath('schema.json').is_file();
+          assert r.files('templates').joinpath('origin').joinpath('default_templates.json').is_file();
+          print('wheel package resources are available')"
+
+      - name: Upload release artifacts (one matrix job)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fig-brush-release
+          if-no-files-found: error
+          path: |
+            dist/fig-brush-0.3.1.zip
+            dist/fig-brush-0.3.1.zip.sha256
+            wheelhouse/*.whl

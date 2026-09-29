@@ -1,0 +1,12 @@
+fig-brush
+Copyright 2026 Petey Yu
+
+This project is distributed under the Apache License, Version 2.0. See
+LICENSE for the full license text.
+
+Origin and OriginLab are third-party product and company names. Origin
+software requires a separate license from OriginLab Corporation and is not
+included in this project. The separately distributed originpro Python package
+is not bundled by fig-brush; consult the terms shipped with the version you
+install. fig-brush is an independent project and is not affiliated with
+OriginLab, OpenAI, or Codex.

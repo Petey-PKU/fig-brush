@@ -1,0 +1,6 @@
+{
+  "graph_family": "line",
+  "origin_plot_type": "line",
+  "data_requirements": ["numeric X or ordered category column", "one or more numeric Y columns"],
+  "supports": ["multiple series", "error bars", "symbols"]
+}

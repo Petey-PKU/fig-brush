@@ -1,0 +1,15 @@
+{
+  "column": "column",
+  "grouped_column": "column",
+  "scatter": "scatter",
+  "line": "line",
+  "box": "box",
+  "violin": "violin",
+  "histogram": "histogram",
+  "heatmap": "Heat_Map.otpu",
+  "regression": "scatter",
+  "pie": "pie",
+  "doughnut": "doughnut",
+  "pie3d": "PIE.otpu",
+  "doughnut3d": "DoughnutofPie.otpu"
+}

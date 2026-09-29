@@ -1,0 +1,6 @@
+{
+  "graph_family": "regression",
+  "origin_plot_type": "scatter_with_fit",
+  "data_requirements": ["numeric X column", "numeric Y column"],
+  "supports": ["fit line", "confidence band", "equation", "R-squared"]
+}

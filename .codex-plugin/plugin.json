@@ -1,0 +1,22 @@
+{
+  "name": "fig-brush",
+  "version": "0.3.1",
+  "description": "Analyze a scientific plot screenshot and create an editable Origin template with replaceable local placeholder data.",
+  "license": "Apache-2.0",
+  "keywords": ["scientific-figures", "origin", "plot-template", "mcp", "skill"],
+  "author": {
+    "name": "Petey Yu"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "fig-brush",
+    "shortDescription": "Create editable Origin templates from scientific plot screenshots.",
+    "longDescription": "fig-brush reads a reference figure, records its visual structure, creates transparent placeholder data, and uses a local Origin installation to create an editable .opju template. The screenshot workflow does not upload files from the local MCP process; compatibility data tools can read CSV/XLSX paths explicitly supplied by the user.",
+    "developerName": "Petey Yu",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Create an editable Origin template from my scientific plot screenshot; I will replace the clearly mapped placeholder data locally."
+  },
+  "mcpServers": "./.mcp.json"
+}
+

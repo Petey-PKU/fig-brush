@@ -1,0 +1,6 @@
+{
+  "graph_family": "violin",
+  "origin_plot_type": "violin",
+  "data_requirements": ["categorical grouping", "raw observations"],
+  "supports": ["raw points", "box overlay", "mean markers"]
+}

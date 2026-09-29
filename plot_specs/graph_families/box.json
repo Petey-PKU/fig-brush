@@ -1,0 +1,6 @@
+{
+  "graph_family": "box",
+  "origin_plot_type": "box",
+  "data_requirements": ["categorical grouping", "raw observations or summary statistics"],
+  "supports": ["raw points", "notches", "outliers"]
+}

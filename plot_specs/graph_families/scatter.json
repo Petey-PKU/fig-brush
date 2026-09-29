@@ -1,0 +1,6 @@
+{
+  "graph_family": "scatter",
+  "origin_plot_type": "scatter",
+  "data_requirements": ["numeric X column", "numeric Y column"],
+  "supports": ["multiple series", "error bars", "raw points"]
+}

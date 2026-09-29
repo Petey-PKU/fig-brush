@@ -1,0 +1,6 @@
+{
+  "graph_family": "histogram",
+  "origin_plot_type": "histogram",
+  "data_requirements": ["one numeric observation column"],
+  "supports": ["density overlay", "normal curve", "multiple series"]
+}

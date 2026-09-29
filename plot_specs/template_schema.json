@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.fig-brush/template-spec-2.0.json",
+  "title": "Reference-only Origin TemplateSpec",
+  "type": "object",
+  "required": ["schema_version", "mode", "canvas", "panels", "output"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "mode": {"const": "reference_template"},
+    "canvas": {"type": "object", "required": ["width_px", "height_px", "font_reference_px", "font_anchor_pt"]},
+    "panels": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "frame_px", "axes", "series"],
+        "properties": {
+          "series": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fit_request": {"$ref": "#/$defs/fitRequest"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "data_policy": {"type": "object", "properties": {"source": {"const": "reference_image_only"}, "original_data_recovered": {"const": false}}},
+    "output": {"type": "object", "required": ["preview_formats"]}
+  },
+  "$defs": {
+    "xRange": {
+      "type": "array",
+      "prefixItems": [{"type": "number"}, {"type": "number"}],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "fitOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x_range": {"$ref": "#/$defs/xRange"},
+        "x_domain": {"$ref": "#/$defs/xRange"},
+        "dense_points": {"type": "integer", "minimum": 20},
+        "source_label": {"type": "string"}
+      }
+    },
+    "fitRequest": {
+      "type": "object",
+      "required": ["model"],
+      "additionalProperties": false,
+      "properties": {
+        "model": {"type": "string", "minLength": 1},
+        "points": {"type": "string", "enum": ["marker_data", "data"]},
+        "x_range": {"$ref": "#/$defs/xRange"},
+        "x_domain": {"$ref": "#/$defs/xRange"},
+        "dense_points": {"type": "integer", "minimum": 20},
+        "source_label": {"type": "string"},
+        "options": {"$ref": "#/$defs/fitOptions"}
+      }
+    }
+  }
+}

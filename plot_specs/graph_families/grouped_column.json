@@ -1,0 +1,6 @@
+{
+  "graph_family": "grouped_column",
+  "origin_plot_type": "grouped_column",
+  "data_requirements": ["one or more grouping columns", "one or more numeric value columns"],
+  "supports": ["error bars", "raw points", "significance annotations"]
+}

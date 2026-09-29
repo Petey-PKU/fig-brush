@@ -1,0 +1,6 @@
+{
+  "graph_family": "column",
+  "origin_plot_type": "column",
+  "data_requirements": ["one categorical column", "one or more numeric value columns"],
+  "supports": ["error bars", "raw points", "significance annotations"]
+}
