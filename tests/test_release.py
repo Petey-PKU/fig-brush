@@ -17,12 +17,29 @@ def test_release_metadata_uses_fig_brush_contract() -> None:
     assert not errors, "release metadata errors: " + "; ".join(errors)
 
 
+def test_runtime_and_diagnostic_entrypoints_are_shipped() -> None:
+    for relative in (
+        "scripts/setup.ps1",
+        "scripts/run_mcp.ps1",
+        "scripts/ensure_runtime.ps1",
+        "scripts/cleanup_runtime.ps1",
+        "scripts/doctor.py",
+        "scripts/check_mcp.py",
+        "scripts/check_origin_roundtrip.py",
+    ):
+        assert (ROOT / relative).is_file(), relative
+
+
 def test_package_allowlist_excludes_private_and_unknown_assets(workspace_tmp: Path) -> None:
     tmp_path = workspace_tmp
     root = tmp_path / "plugin"
     (root / ".codex-plugin").mkdir(parents=True)
     (root / ".codex-plugin" / "plugin.json").write_text(
-        json.dumps({"name": "fig-brush", "version": "0.3.1"}), encoding="utf-8"
+        json.dumps({"name": "fig-brush", "version": "0.3.2"}), encoding="utf-8"
+    )
+    (root / ".agents" / "plugins").mkdir(parents=True)
+    (root / ".agents" / "plugins" / "marketplace.json").write_text(
+        json.dumps({"name": "fig-brush-local", "plugins": []}), encoding="utf-8"
     )
     (root / "README.md").write_text("public", encoding="utf-8")
     (root / "fig_brush").mkdir()
@@ -43,6 +60,7 @@ def test_package_allowlist_excludes_private_and_unknown_assets(workspace_tmp: Pa
         members = set(bundle.namelist())
     assert "fig-brush/README.md" in members
     assert "fig-brush/fig_brush/__init__.py" in members
+    assert "fig-brush/.agents/plugins/marketplace.json" in members
     assert "fig-brush/examples/synthetic/reference.png" in members
     assert "fig-brush/examples/synthetic/values.csv" in members
     assert "fig-brush/examples/synthetic/other.png" not in members

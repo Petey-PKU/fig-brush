@@ -10,7 +10,7 @@ editable Origin project that matches the figure's visual structure. The
 reference screenshot is the only source for placeholder values. Never request
 or claim access to the user's private research data. The screenshot workflow
 does not upload files from the local MCP process. Compatibility data tools can
-read CSV/XLSX paths explicitly supplied by the user. Version 0.3.1 adds a
+read CSV/XLSX paths explicitly supplied by the user. Version 0.3.2 adds a
 scientific reconstruction contract: read what the figure is arguing before
 choosing how to draw it.
 
@@ -97,7 +97,7 @@ A prepared file or pixel distance alone is not an acceptance pass.
 - PNG, JPG, or JPEG scientific plot screenshots.
 - Origin 2021 or newer on Windows.
 
-The current 0.3.1 workflow is screenshot-only. Existing data-inspection code is
+The current 0.3.2 workflow is screenshot-only. Existing data-inspection code is
 kept only where it is needed for compatibility with older MCP calls; it is not
 part of the reference reconstruction flow.
 
@@ -105,7 +105,7 @@ The spec recognizes column/grouped column, scatter, line and regression,
 box/violin, histogram, heatmap/matrix, flat pie/doughnut, and explicit
 perspective pie3d/doughnut3d families. Native fidelity is strongest for the
 Cartesian, matrix, and pie families; box/violin/histogram remain template-
-dependent declarations. The 0.3.1 bridge records native pie view-angle and
+dependent declarations. The 0.3.2 bridge records native pie view-angle and
 rotation controls while retaining editable worksheet values.
 
 Fast preparation is the default during iteration: it rounds visual

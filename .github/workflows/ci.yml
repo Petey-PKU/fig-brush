@@ -34,6 +34,9 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+      - name: Probe MCP stdio protocol
+        run: python scripts/check_mcp.py --plugin-root . --python python
+
       - name: Validate release metadata and source tree
         run: python scripts/validate_release.py
 
@@ -66,6 +69,6 @@ jobs:
           name: fig-brush-release
           if-no-files-found: error
           path: |
-            dist/fig-brush-0.3.1.zip
-            dist/fig-brush-0.3.1.zip.sha256
+            dist/fig-brush-0.3.2.zip
+            dist/fig-brush-0.3.2.zip.sha256
             wheelhouse/*.whl

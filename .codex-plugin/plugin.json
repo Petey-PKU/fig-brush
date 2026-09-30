@@ -1,6 +1,6 @@
 {
   "name": "fig-brush",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Analyze a scientific plot screenshot and create an editable Origin template with replaceable local placeholder data.",
   "license": "Apache-2.0",
   "keywords": ["scientific-figures", "origin", "plot-template", "mcp", "skill"],

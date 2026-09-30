@@ -64,7 +64,10 @@ def is_allowed(path: Path, root: Path) -> bool:
         return True
     if suffix in FORBIDDEN_EXTENSIONS or suffix in {".png", ".bmp", ".tif", ".tiff"}:
         return False
-    if relative in ROOT_FILES or relative == ".codex-plugin/plugin.json":
+    if relative in ROOT_FILES or relative in {
+        ".codex-plugin/plugin.json",
+        ".agents/plugins/marketplace.json",
+    }:
         return True
     top = parts[0].lower()
     if top in PACKAGE_DIRS:

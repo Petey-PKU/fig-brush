@@ -2,8 +2,8 @@ cff-version: 1.2.0
 title: "fig-brush"
 message: "If fig-brush contributes to your work, please cite this release."
 type: software
-version: 0.3.1
-date-released: 2026-09-29
+version: 0.3.2
+date-released: 2026-09-30
 authors:
   - family-names: Yu
     given-names: Petey

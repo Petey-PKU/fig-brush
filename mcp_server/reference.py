@@ -420,7 +420,7 @@ def inspect_reference(path: str | Path, user_notes: str = "") -> dict[str, Any]:
         # Geometry is measurable from a screenshot, but scientific meaning is
         # deliberately kept as a model-led contract.  A renderer must not
         # turn this placeholder into an assertion about the paper's analysis.
-        "analysis_version": "0.3.1",
+        "analysis_version": "0.3.2",
         "analysis_status": "geometry_and_scientific_contract_requires_model_interpretation",
         "reference_spec": {
             "graph_family": None,
@@ -465,7 +465,7 @@ def inspect_reference(path: str | Path, user_notes: str = "") -> dict[str, Any]:
             "confidence": 0.0,
             "geometry_confidence": geometry["detection_confidence"],
             "scientific_context": {
-                "contract_version": "0.3.1",
+                "contract_version": "0.3.2",
                 "reference": {
                     "research_question": None,
                     "plot_intent": None,

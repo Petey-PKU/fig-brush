@@ -22,7 +22,7 @@ from .paths import InputValidationError, sha256_file, write_json
 from .template import prepare_template
 
 
-RUNNER_VERSION = "0.3.1"
+RUNNER_VERSION = "0.3.2"
 REVIEW_STATUSES = {"pass", "minor", "major", "unsupported", "missing"}
 _EVIDENCE_PASS = {"pass", "passed", "ok", "true"}
 _EVIDENCE_NOT_RUN = {

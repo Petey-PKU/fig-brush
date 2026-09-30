@@ -6,7 +6,7 @@ of a screenshot, records a reviewable `TemplateSpec`, and creates an Origin
 workbook with clearly labelled visual placeholders that a researcher can
 replace with local values.
 
-**Version:** 0.3.1  
+**Version:** 0.3.2<br>
 **License:** [Apache License 2.0](LICENSE)  
 **Maintainer:** Petey Yu
 
@@ -42,42 +42,99 @@ Requirements:
 - the `originpro` package installed in the same environment when native
   rendering is needed.
 
-From the repository root, run the setup script. It creates `.venv` and
-installs the local `fig-brush` package (use `-Dev` to include test and build
-dependencies):
+From the repository root, run the setup script. It creates a versioned,
+per-user runtime under `%LOCALAPPDATA%\fig-brush\runtimes` (or `PLUGIN_DATA`
+when Codex provides it) and installs the local package there. Use `-Dev` to
+include test and build dependencies:
 
 ```powershell
 .\scripts\setup.ps1
 # or: .\scripts\setup.ps1 -Dev
 ```
 
-To install a published GitHub release, download the matching
-`fig-brush-<version>.zip` asset and its `.sha256` sidecar, extract the archive,
-open the extracted `fig-brush` directory, and run the same setup script. Keep
-the extracted directory in place while the local Codex plugin is enabled;
-the MCP configuration starts its project-local launcher.
-
-Run the synthetic example without Origin:
+Check the installed environment before starting Codex:
 
 ```powershell
-.\.venv\Scripts\python.exe examples\synthetic\run_example.py
+$python = .\scripts\ensure_runtime.ps1 -PluginRoot .
+& $python scripts\doctor.py --plugin-root .
+& $python scripts\check_mcp.py --plugin-root . --python $python
+```
+
+The doctor returns `0` when the screenshot-template workflow is ready. A
+missing Origin installation is reported as an optional warning; pass
+`--require-origin` when a native `.opju` render is required. Use `--json` for
+machine-readable output.
+
+To install a published GitHub release, download the matching
+`fig-brush-<version>.zip` asset and its `.sha256` sidecar, extract the archive,
+open the extracted `fig-brush` directory, and run the same setup script. The
+Codex launcher can also bootstrap this per-user runtime on first start from
+the installed marketplace copy.
+
+Run the synthetic example without Origin after selecting the runtime Python:
+
+```powershell
+$python = .\scripts\ensure_runtime.ps1 -PluginRoot .
+& $python examples\synthetic\run_example.py
 ```
 
 The optional `--render-origin` flag asks the local Origin bridge to create a
 native project. It requires a working Origin installation and `originpro` in
-`.venv`:
+the same per-user runtime:
 
 ```powershell
-.\.venv\Scripts\python.exe examples\synthetic\run_example.py --render-origin
+$python = .\scripts\ensure_runtime.ps1 -PluginRoot .
+& $python examples\synthetic\run_example.py --render-origin
 ```
 
 For a local Codex/MCP installation, configure the plugin from this checkout.
-The repository `.mcp.json` starts `scripts/run_mcp.ps1`, which uses the
-checkout's `.venv` rather than a global Python installation. The setup script
-must be run first.
+The repository `.mcp.json` starts `scripts/run_mcp.ps1`. The launcher resolves
+the installed plugin root and bootstraps the same versioned per-user runtime;
+it does not write diagnostics to MCP stdout.
+
+### Register the local Codex marketplace
+
+This repository includes a repo-scoped marketplace at
+`.agents/plugins/marketplace.json`. After running the setup script, register
+the checkout as a local marketplace from PowerShell:
+
+```powershell
+codex plugin marketplace add "C:\path\to\fig-brush"
+codex plugin marketplace list
+```
+
+Open Codex's Plugins Directory, select **fig-brush Local**, and install
+`fig-brush`. Start a new chat after installation. Keep the checkout available
+as the marketplace source so Codex can refresh it when you upgrade.
+
+To refresh an installed copy after pulling changes, upgrade the marketplace
+and restart Codex if the update is not visible immediately:
+
+```powershell
+codex plugin marketplace upgrade fig-brush-local
+```
+
+To remove the local source from Codex, uninstall `fig-brush` from the Plugins
+Directory, then remove the marketplace registration:
+
+```powershell
+codex plugin marketplace remove fig-brush-local
+```
+
+The launcher keeps one runtime per plugin version. After uninstalling the
+plugin, inspect or remove only those runtime folders with
+`scripts\cleanup_runtime.ps1`; it does not touch generated projects or
+research data:
+
+```powershell
+.\scripts\cleanup_runtime.ps1
+.\scripts\cleanup_runtime.ps1 -Version 0.3.2 -Confirm
+```
 
 Install the third-party `originpro` package according to the package's
 supported distribution instructions when native Origin automation is needed.
+Use the runtime Python printed by `setup.ps1` (or by `ensure_runtime.ps1`),
+rather than a different global Python environment.
 fig-brush does not bundle Origin, OriginLab software, or the `originpro`
 package.
 
@@ -127,7 +184,8 @@ workflow. Do not commit private CSV, XLSX, PNG, PDF, or `.opju` files.
 
 ```powershell
 .\scripts\setup.ps1 -Dev
-.\.venv\Scripts\python.exe -m pytest
+$python = .\scripts\ensure_runtime.ps1 -PluginRoot . -Dev
+& $python -m pytest
 python scripts\package_plugin.py
 ```
 

@@ -1,4 +1,4 @@
-# Text layout contract (0.3.1)
+# Text layout contract (0.3.2)
 
 `origin_bridge.text_layout.layout_text_label` places an already-created Origin
 label after its rich text has been assigned. It reads the rendered label's

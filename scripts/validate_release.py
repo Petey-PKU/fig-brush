@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 EXPECTED_NAME = "fig-brush"
-EXPECTED_VERSION = "0.3.1"
+EXPECTED_VERSION = "0.3.2"
 EXPECTED_AUTHOR = "Petey Yu"
 
 RUNTIME_EXCLUDED_DIRS = {
@@ -190,8 +190,9 @@ def validate_metadata(root: Path) -> list[str]:
     if citation_text:
         if not re.search(r"(?m)^[ \t]*title:\s*.*fig-brush", citation_text, re.I):
             errors.append("CITATION.cff title must mention fig-brush")
-        if not re.search(r"(?m)^[ \t]*version:\s*['\"]?0\.3\.1", citation_text):
-            errors.append("CITATION.cff version must be 0.3.1")
+        citation_version_pattern = rf"(?m)^[ \t]*version:\s*['\"]?{re.escape(EXPECTED_VERSION)}"
+        if not re.search(citation_version_pattern, citation_text):
+            errors.append("CITATION.cff version must be 0.3.2")
         has_full_name = EXPECTED_AUTHOR.lower() in citation_text.lower()
         has_split_name = bool(
             re.search(r"(?m)^[ \t]*(?:-\s*)?family-names:\s*Yu\s*$", citation_text)
@@ -206,10 +207,48 @@ def validate_metadata(root: Path) -> list[str]:
         if not re.search(r"(?m)^name:\s*fig-brush\s*$", skill_text):
             errors.append("SKILL.md front matter name must be fig-brush")
         if EXPECTED_VERSION not in skill_text:
-            errors.append("SKILL.md must mention version 0.3.1")
+            errors.append("SKILL.md must mention version 0.3.2")
 
     _require(errors, root / "LICENSE", "LICENSE")
     _require(errors, root / "README.md", "README.md")
+    for relative in (
+        "scripts/setup.ps1",
+        "scripts/run_mcp.ps1",
+        "scripts/ensure_runtime.ps1",
+        "scripts/cleanup_runtime.ps1",
+        "scripts/doctor.py",
+        "scripts/check_mcp.py",
+        "scripts/check_origin_roundtrip.py",
+    ):
+        _require(errors, root / relative, relative)
+
+    marketplace_path = root / ".agents" / "plugins" / "marketplace.json"
+    marketplace_text = _require(errors, marketplace_path, ".agents/plugins/marketplace.json")
+    if marketplace_text:
+        try:
+            marketplace = json.loads(marketplace_text)
+            entries = marketplace.get("plugins", [])
+            if marketplace.get("name") != "fig-brush-local":
+                errors.append("local marketplace name must be 'fig-brush-local'")
+            if not isinstance(entries, list) or not any(
+                isinstance(entry, dict)
+                and entry.get("name") == EXPECTED_NAME
+                and entry.get("source", {}).get("path") == "./"
+                for entry in entries
+            ):
+                errors.append("local marketplace must expose fig-brush from source.path './'")
+            for entry in entries:
+                if not isinstance(entry, dict) or entry.get("name") != EXPECTED_NAME:
+                    continue
+                for key in ("policy", "category"):
+                    if key not in entry:
+                        errors.append(f"local marketplace fig-brush entry is missing {key}")
+                policy = entry.get("policy", {})
+                for key in ("installation", "authentication"):
+                    if key not in policy:
+                        errors.append(f"local marketplace fig-brush policy is missing {key}")
+        except (json.JSONDecodeError, AttributeError, TypeError) as exc:
+            errors.append(f"invalid local marketplace JSON: {exc}")
     return errors
 
 

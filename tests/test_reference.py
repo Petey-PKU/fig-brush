@@ -20,8 +20,8 @@ def test_reference_extracts_page_ratio_and_frame_geometry(workspace_tmp: Path):
     assert 2.5 < frame["aspect_ratio"] < 3.5
     assert all(hints["frame_sides"].values())
     assert result["reference_spec"]["style"]["page_aspect_ratio"] == result["image"]["aspect_ratio"]
-    assert result["analysis_version"] == "0.3.1"
-    assert result["reference_spec"]["scientific_context"]["contract_version"] == "0.3.1"
+    assert result["analysis_version"] == "0.3.2"
+    assert result["reference_spec"]["scientific_context"]["contract_version"] == "0.3.2"
     assert hints["x_major_tick_count_hint"] >= 0
     assert hints["y_major_tick_count_hint"] >= 0
     assert "x_minor_tick_count_hint" in hints

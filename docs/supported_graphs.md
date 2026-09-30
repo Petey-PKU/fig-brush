@@ -1,6 +1,6 @@
 # Supported graph families
 
-Version 0.3.1 selects the Origin graph family from the visible screenshot and
+Version 0.3.2 selects the Origin graph family from the visible screenshot and
 builds the editable worksheet mapping from the detected objects. The user
 does not need to provide a dataset.
 

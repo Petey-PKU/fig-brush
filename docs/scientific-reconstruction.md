@@ -1,4 +1,4 @@
-# Scientific reconstruction contract (0.3.1)
+# Scientific reconstruction contract (0.3.2)
 
 The screenshot is evidence of a figure's visible argument, not a source of
 the author's private measurements. Pixels may be sampled to estimate geometry,

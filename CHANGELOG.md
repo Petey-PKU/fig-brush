@@ -3,6 +3,26 @@
 All notable changes to fig-brush are recorded here. The project follows
 semantic versioning for public releases.
 
+## [0.3.2] - 2026-09-30
+
+### Added
+
+- A repo-scoped Codex marketplace entry for local installation.
+- A per-user, versioned runtime bootstrap that works from Codex's installed
+  plugin cache copy.
+- `scripts/doctor.py` for dependency and Origin capability diagnostics.
+- `scripts/check_mcp.py` for initialize/tools-list/stdout protocol smoke tests.
+- `scripts/check_origin_roundtrip.py` for native Origin save/reopen persistence
+  checks on a copied project.
+- `scripts/cleanup_runtime.ps1` for safe removal of unused plugin runtimes.
+
+### Changed
+
+- MCP startup diagnostics stay on stderr so stdout remains reserved for the
+  stdio protocol.
+- Release metadata, documentation, and generated examples now identify the
+  `0.3.2` release.
+
 ## [0.3.1] - 2026-09-29
 
 ### Added
@@ -27,4 +47,4 @@ semantic versioning for public releases.
 
 ## [Unreleased]
 
-Reserved for changes after 0.3.1.
+Future changes will be listed here before the next release.

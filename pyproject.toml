@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fig-brush"
-version = "0.3.1"
+version = "0.3.2"
 description = "Create editable Origin figure templates from reference screenshots"
 readme = "README.md"
 license = {text = "Apache-2.0"}

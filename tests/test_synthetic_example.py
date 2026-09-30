@@ -21,7 +21,7 @@ def test_synthetic_reference_and_template_are_self_contained() -> None:
     validate_template(spec)
     assert spec["canvas"] == {"width_px": 1200, "height_px": 760, "font_reference_px": 17, "font_anchor_pt": 10}
     assert spec["example"]["not_research_data"] is True
-    assert spec["example"]["version"] == "0.3.1"
+    assert spec["example"]["version"] == "0.3.2"
     assert spec["example"]["author"] == "Petey Yu"
     assert len(spec["panels"][0]["series"]) == 2
     assert "not research data" in spec["scientific_context"]["description"]
