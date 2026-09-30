@@ -1,3 +1,6 @@
+import sys
+import types
+
 import pandas as pd
 
 import origin_bridge.graph_builder as graph_builder
@@ -135,6 +138,18 @@ def test_confidence_band_adds_two_editable_lines_and_fill_to_next(monkeypatch):
             self.plots.append(plot)
             return plot
 
+    # ``originpro`` is a separately licensed commercial dependency and is not
+    # installed in the open-source CI jobs.  Provide only the small utility
+    # surface exercised by this test when the optional package is unavailable.
+    try:
+        import originpro.utils  # type: ignore[import-not-found]
+    except ModuleNotFoundError:
+        originpro_module = types.ModuleType("originpro")
+        utils_module = types.ModuleType("originpro.utils")
+        utils_module.ocolor = lambda value: 123
+        originpro_module.utils = utils_module
+        monkeypatch.setitem(sys.modules, "originpro", originpro_module)
+        monkeypatch.setitem(sys.modules, "originpro.utils", utils_module)
     monkeypatch.setattr("originpro.utils.ocolor", lambda value: 123)
     layer = Layer()
     plots = _add_confidence_band(layer, object(), 2, 4, 5, {"color": "#336699"})
@@ -183,3 +198,4 @@ def test_pie_templates_separate_flat_and_perspective_defaults():
     templates = template_by_family()
     assert templates["pie"].lower() == "pie"
     assert templates["pie3d"].lower() == "pie.otpu"
+
