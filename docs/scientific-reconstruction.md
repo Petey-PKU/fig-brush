@@ -85,15 +85,30 @@ Connected-point, step, staircase, guide, and baseline traces must remain
 explicit `data`/`line_data`; they are not silently converted to statistical
 fits. A series with `marker_data` but no `fit_request` remains unchanged.
 
+## Visual template first, data mapping optional
+
+The primary deliverable is the visual format brush: a native Origin graph
+template (`.otpu`) plus a style manifest. It can be applied to the researcher's
+own workbook without sending that workbook to fig-brush. `result.opju` is an
+optional preview project whose values are synthetic visual placeholders.
+
 ## Editable data layout
 
-Use one `Reference Data` workbook for an image. For ordinary XY figures,
-prefer one worksheet with a shared `X` column followed by `Y` columns for all
-series. Keep fit, uncertainty, or other derived columns adjacent to their
-source columns where Origin permits it. Use a second worksheet only when a
-different Origin plot type or a matrix page requires it. This layout lets a
-researcher see which Y column maps to each legend entry and replace values
-without hunting through a book per series.
+When a researcher explicitly asks fig-brush to map local values into the demo,
+the replacement bundle is the input surface. For categorical summary figures it
+uses long `Raw_Data` rows plus explicit `Summary_Data` rows; for ordinary XY
+figures it uses tidy `XY_Data` rows. The Origin `Reference Data` worksheet
+remains a derived plot surface containing numeric category positions, marker
+jitter, sparse bar rows, and fit/helper columns. Users should replace the
+conventional input tables and call `refresh_reference_template`; they should
+not edit the derived helper columns to change scientific values. This optional
+route is separate from applying the `.otpu` to the user's existing workbook.
+
+Use one `Reference Data` workbook for an image. Keep fit, uncertainty, or
+other derived columns adjacent to their source columns where Origin permits it.
+Use a second worksheet only when a different Origin plot type or a matrix page
+requires it. This lets the graph retain its measured style while the input
+contract remains recognizable to a researcher.
 
 ## Text and geometry
 
@@ -106,5 +121,3 @@ the same page and plot-frame geometry.
 
 `compare_reference` remains a pixel-level iteration aid. It cannot prove that
 the original data or the paper's scientific method has been recovered.
-
-

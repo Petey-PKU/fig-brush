@@ -1,8 +1,9 @@
 # Supported graph families
 
-Version 0.3.2 selects the Origin graph family from the visible screenshot and
-builds the editable worksheet mapping from the detected objects. The user
-does not need to provide a dataset.
+Version 0.3.3 selects the Origin graph family from the visible screenshot and
+builds a visual format brush from the detected objects. The user does not need
+to provide a dataset: the reusable `.otpu` carries the measured style, while
+the optional `.opju` uses synthetic placeholders for visual review.
 
 | Family | Screenshot cues |
 | --- | --- |
@@ -18,5 +19,14 @@ does not need to provide a dataset.
 
 The reference-only `TemplateSpec` records the visible limits, ticks, frame,
 labels, legend, colours, symbols, and worksheet mapping. Every generated value
-is a labelled visual placeholder; it is intended to make the Origin project
-recognizable until the user pastes private values into the matching worksheet.
+in the optional demo is a labelled visual placeholder; it is intended to make
+the Origin project recognizable while the user applies the `.otpu` to their
+own workbook.
+
+For measured column spacing, set `style.bar_gap_percent` in the template. The
+value is the native Origin gap between adjacent bars (0 to 100); it controls
+bar separation independently from border width. In a mixed column and marker
+panel, column series share the categorical X grid while marker or line series
+keep their own X columns, so nearby points remain editable at their measured
+positions. Page-attached labels belong in `panel.labels` with normalized `x1`
+and `y1` anchors when the screenshot provides their location.

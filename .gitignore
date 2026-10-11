@@ -20,6 +20,8 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 outputs/
+*_format_brush/
+.pytest-temp-acceptance/
 artifacts/
 private/
 benchmarks/

@@ -66,6 +66,12 @@
         "opposite_tick_direction": {"enum": ["out", "in", "both", "none"]},
         "tick_label_font_pt": {"type": "number", "exclusiveMinimum": 0},
         "axis_title_font_pt": {"type": "number", "exclusiveMinimum": 0},
+        "bar_gap_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Native Origin gap between adjacent column bars (0 = touching, 100 = maximum gap)."
+        },
         "estimated_text_height_ratio": {"type": "number", "minimum": 0}
       },
       "additionalProperties": true

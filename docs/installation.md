@@ -1,16 +1,16 @@
 # Installation
 
 fig-brush is developed for Windows because native Origin automation uses the
-local Origin application. The screenshot-template preparation path can be
-run without Origin; native `.opju` rendering cannot.
+local Origin application. The default image-to-parameter workflow runs
+without Origin; native `.otpu`/`.opju` export does not.
 
 ## Requirements
 
 - Windows 10 or 11;
 - Python 3.10 or newer;
-- Origin 2021 or newer with a valid local license for native rendering;
-- the separately distributed `originpro` package in the same Python
-  environment as the MCP server when Origin automation is required.
+- Pillow and the dependencies installed by the setup script;
+- Origin 2021 or newer with a valid local license, plus the separately
+  distributed `originpro` package, only when native export is required.
 
 Origin and OriginLab are third-party commercial products. fig-brush does not
 include or grant an Origin license. `originpro` is a separately distributed
@@ -76,7 +76,7 @@ it never touches generated projects or research data:
 
 ```powershell
 .\scripts\cleanup_runtime.ps1
-.\scripts\cleanup_runtime.ps1 -Version 0.3.2 -Confirm
+.\scripts\cleanup_runtime.ps1 -Version 0.3.3 -Confirm
 # or, after all fig-brush installations are removed:
 .\scripts\cleanup_runtime.ps1 -All -Confirm
 ```
@@ -131,13 +131,43 @@ This probe changes one numeric worksheet cell in the copy, saves and reopens
 it, and checks that the value and a graph page persist. It never changes the
 input project.
 
-## Screenshot-only workflow
+## Screenshot-only format-brush workflow
 
-Use `inspect_reference` on a PNG or JPEG, complete the visual reading as a
-`TemplateSpec`, then call `prepare_reference_template`. The output includes a
-template specification, a data manifest, previews, and (when Origin is
-available) an editable project. Workbook values are synthetic visual
-placeholders. Replace them with your own research values in Origin.
+Run `format_brush` on a PNG or JPEG, or use the CLI equivalent:
+
+```powershell
+python scripts\origin_plot_cli.py format-brush reference.png output
+```
+
+The default call writes `format_parameters.json`, `reference_analysis.json`,
+and a short `APPLY_FORMAT.md` checklist without starting Origin. Open the
+checklist first; the first JSON is its machine-readable source and the second
+JSON is optional audit evidence. If a native template is
+needed, pass a completed reference-only `TemplateSpec` and
+`render_origin=true`; the optional output then includes
+`style_template.otpu`, `style_manifest.json`, and an editable `result.opju`
+demo with synthetic visual placeholders.
+
+For the common case where you already have an editable Origin project, apply
+the JSON bundle with one command:
+
+```powershell
+python scripts\origin_plot_cli.py apply-format my_graph.opju output\format_parameters.json
+```
+
+This writes `my_graph_formatted.opju` and leaves `my_graph.opju` unchanged.
+
+If Origin is already open on the user's target graph, no command is needed:
+ask Codex to apply the generated `format_parameters.json` to the current Origin
+graph. The `apply_active_format` MCP tool leaves the project open and unsaved.
+When a native reference `.opju` is available, `stage_format_clipboard` can seed
+Origin's own format clipboard so the user can switch graphs and use the native
+right-click **Paste Format** action.
+
+The optional replacement bundle and `refresh_reference_template` tool can map
+explicitly supplied local tables into the demo project. This is useful for a
+user who wants a ready-filled local example, but it is not required to get or
+apply the visual format brush. See [`format-brush.md`](format-brush.md).
 
 The screenshot workflow does not upload or require a private dataset. The
 Codex host/model may process the screenshot and tool results under its own

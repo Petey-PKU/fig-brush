@@ -6,6 +6,7 @@ import pandas as pd
 import origin_bridge.graph_builder as graph_builder
 from origin_bridge.graph_builder import (
     _add_confidence_band,
+    _apply_bar_gap,
     _apply_pie_geometry,
     _error_column_index,
     _template_data_column_index,
@@ -173,6 +174,52 @@ def test_pie_geometry_uses_flat_view_for_plain_pie():
     applied = _apply_pie_geometry(plot, "pie", {})
     assert "view_angle" in applied
     assert plot.commands == ["-pgpva 90"]
+
+
+def test_bar_gap_uses_native_vertical_gap_command():
+    class Plot:
+        def __init__(self):
+            self.commands = []
+
+        def set_cmd(self, command):
+            self.commands.append(command)
+
+    plots = [Plot(), Plot()]
+    assert _apply_bar_gap(plots, {"bar_gap_percent": 38}) == ["-vg 38", "-vg 38"]
+    assert [plot.commands for plot in plots] == [["-vg 38"], ["-vg 38"]]
+    assert _apply_bar_gap(plots, {"bar_gap_percent": 101}) == []
+
+
+def test_panel_wide_sheet_keeps_mixed_marker_x_column(monkeypatch):
+    calls = {}
+
+    class Sheet:
+        def set_labels(self, labels):
+            calls["labels"] = labels
+
+        def set_label(self, *args):
+            pass
+
+    def fake_add_dataframe(op, frame, name, book=None):
+        calls["frame"] = frame
+        return Sheet()
+
+    monkeypatch.setattr(graph_builder, "add_dataframe", fake_add_dataframe)
+    panel = {
+        "id": "Panel1",
+        "data_worksheet": "Panel1_Data",
+        "shared_x_header": "Panel1_X",
+        "series": [
+            {"id": "Bars", "kind": "column", "data": {"x": [1, 2, 3], "y": [10, 20, 30]},
+             "wide_columns": {"x": "Panel1_X", "y": "Bars_Y"}},
+            {"id": "Markers", "kind": "scatter", "data": {"x": [0.85, 1.15], "y": [11, 15]},
+             "wide_columns": {"x": "Markers_X", "y": "Markers_Y"}},
+        ],
+    }
+    _, maps = graph_builder._panel_wide_sheet(object(), panel)
+    assert maps["Bars"]["x"] == 0
+    assert maps["Markers"]["x"] != 0
+    assert calls["frame"]["Markers_X"].tolist()[:2] == [0.85, 1.15]
 
 
 def test_pie3d_geometry_keeps_editable_view_parameters():

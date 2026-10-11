@@ -567,8 +567,10 @@ def inspect_reference(path: str | Path, user_notes: str = "") -> dict[str, Any]:
             "the user's data or an explicitly requested calculation takes precedence. Preserve geometry_hints as a starting "
             "point, but correct them if the image contains panels or an inset. Use 12 pt tick "
             "labels as the physical size anchor; measure tick glyph height / plot-frame height "
-            "and preserve relative text sizes. Page millimeters are derived from this ratio, "
-            "not from screenshot pixel size or DPI."
+            "and preserve relative text sizes. For categorical bars, estimate the visible bar "
+            "width and inter-bar gap and carry the result as style.bar_gap_percent so the native "
+            "Origin plot can reproduce the spacing. If bars and raw markers share a panel, keep "
+            "the bar categories on a common X grid while preserving independent marker X values. "
+            "Page millimeters are derived from this ratio, not from screenshot pixel size or DPI."
         ),
     }
-

@@ -15,6 +15,10 @@ class OriginUnavailableError(OriginBridgeError):
     """Raised when Origin or its originpro package cannot be used."""
 
 
+class OriginStartupError(OriginBridgeError):
+    """Raised when Origin Automation is installed but cannot finish startup."""
+
+
 @dataclass
 class OriginStatus:
     available: bool
@@ -46,6 +50,38 @@ def _import_originpro() -> ModuleType:
         ) from exc
 
 
+def _startup_error(operation: str, exc: Exception) -> OriginStartupError:
+    """Turn common UFF/COM startup failures into an actionable message."""
+    detail = str(exc).strip() or exc.__class__.__name__
+    lowered = detail.lower()
+    startup_markers = (
+        "invalid command",
+        "lt_execute",
+        "exception in originext",
+        "access is denied",
+        "winerror 5",
+        "user files folder",
+        "uff",
+    )
+    if any(marker in lowered for marker in startup_markers):
+        hint = (
+            "Origin Automation connected but did not finish startup. Complete the "
+            "User Files Folder dialog once in the normal Origin desktop, then rerun "
+            "fig-brush. The UFF is Origin configuration and is separate from the "
+            "project output folder. Do not launch Origin64.exe with -d during normal "
+            "generation because -d intentionally forces a new UFF. If this runs in a "
+            "restricted sandbox, allow Origin COM/registry access or run the native "
+            "render locally."
+        )
+    else:
+        hint = (
+            "Check that Origin is installed and licensed, that originpro matches the "
+            "Origin version, and that the desktop process can access its user files "
+            "folder."
+        )
+    return OriginStartupError(f"{operation} failed: {detail}. {hint}")
+
+
 def origin_status() -> dict[str, Any]:
     try:
         module = _import_originpro()
@@ -73,12 +109,18 @@ class OriginSession:
     def __enter__(self) -> ModuleType:
         self.op = _import_originpro()
         set_show = getattr(self.op, "set_show", None)
-        if callable(set_show):
-            set_show(self.show)
+        try:
+            if callable(set_show):
+                set_show(self.show)
+        except Exception as exc:
+            raise _startup_error("Origin startup", exc) from exc
         new_project = getattr(self.op, "new", None)
         if not callable(new_project):
             raise OriginBridgeError("originpro does not expose project.new().")
-        new_project()
+        try:
+            new_project()
+        except Exception as exc:
+            raise _startup_error("Origin project creation", exc) from exc
         return self.op
 
     def __exit__(self, exc_type, exc, traceback) -> None:
@@ -88,17 +130,35 @@ class OriginSession:
         # successful render into an error if an older installation omits it.
         exit_origin = getattr(self.op, "exit", None)
         if callable(exit_origin):
-            exit_origin()
+            try:
+                exit_origin()
+            except Exception:
+                # Cleanup must not mask the render or the original exception.
+                pass
 
 
-def open_origin_project(path: str, show: bool = False) -> ModuleType:
+def open_origin_project(path: str, show: bool = False, asksave: bool = False) -> ModuleType:
+    """Attach to Origin and open a project.
+
+    ``asksave`` is kept explicit because automation that opens a reference
+    project should be able to preserve a user's unsaved work.  Existing
+    batch/render callers retain the historical no-prompt default; interactive
+    bridges such as the native format clipboard pass ``asksave=True``.
+    """
     op = _import_originpro()
     set_show = getattr(op, "set_show", None)
-    if callable(set_show):
-        set_show(show)
+    try:
+        if callable(set_show):
+            set_show(show)
+    except Exception as exc:
+        raise _startup_error("Origin startup", exc) from exc
     open_project = getattr(op, "open", None)
     if not callable(open_project):
         raise OriginBridgeError("originpro does not expose project.open().")
-    if not open_project(path, readonly=False, asksave=False):
+    try:
+        opened = open_project(path, readonly=False, asksave=asksave)
+    except Exception as exc:
+        raise _startup_error(f"Opening Origin project {path}", exc) from exc
+    if not opened:
         raise OriginBridgeError(f"Origin could not open project: {path}")
     return op

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -167,6 +168,37 @@ def _add_confidence_band(
     return [lower_plot, upper_plot]
 
 
+def _apply_bar_gap(column_plots: list[Any], style: dict[str, Any] | None) -> list[str]:
+    """Apply a native Origin gap between column plots when requested.
+
+    Origin's ``-vg`` command controls the gap between adjacent bars. It is
+    separate from ``-pbw``, which controls the bar border width. Keeping this
+    as a style option lets screenshot-derived templates reproduce measured
+    bar widths without changing the defaults of existing projects.
+    """
+    style = style or {}
+    raw_gap = style.get("bar_gap_percent", style.get("column_gap_percent"))
+    if raw_gap is None:
+        return []
+    try:
+        gap = float(raw_gap)
+    except (TypeError, ValueError):
+        return []
+    if not math.isfinite(gap) or not 0 <= gap <= 100:
+        return []
+    command = f"-vg {gap:g}"
+    applied: list[str] = []
+    for plot in column_plots:
+        try:
+            plot.set_cmd(command)
+            applied.append(command)
+        except (AttributeError, RuntimeError, OSError):
+            # Older Origin builds can expose bar plots without the command
+            # interface. The native plot remains editable in that case.
+            continue
+    return applied
+
+
 def _apply_pie_geometry(plot: Any, family: str, style: dict[str, Any]) -> list[str]:
     """Apply Origin's native pie view parameters without rasterising wedges.
 
@@ -281,8 +313,9 @@ def _panel_wide_sheet(op: Any, panel: dict[str, Any], book: Any | None = None) -
     header_index: dict[str, int] = {}
     panel_series = panel.get("series", [])
     shared_x_header = panel.get("shared_x_header")
-    column_series = [series for series in panel_series if series.get("kind") == "column"]
-    shared_x_series = [series for series in panel_series if series.get("kind") != "column"]
+    column_kinds = {"column", "grouped_column", "bar"}
+    column_series = [series for series in panel_series if series.get("kind") in column_kinds]
+    shared_x_series = [series for series in panel_series if series.get("kind") not in column_kinds]
     shared_x_values: list[float] = []
     if shared_x_header and column_series:
         shared_x_values = _shared_column_categories(column_series)
@@ -313,6 +346,13 @@ def _panel_wide_sheet(op: Any, panel: dict[str, Any], book: Any | None = None) -
         mapping = _wide_columns(series)
         mapping.update(series.get("wide_columns", {}) or {})
         series["wide_columns"] = mapping
+        # A mixed column/scatter panel has a shared categorical X for bars,
+        # while marker observations retain their own numeric X column. When
+        # all series explicitly point at the shared header, reuse it for the
+        # whole panel as before.
+        uses_shared_x = bool(shared_x_header) and (
+            series.get("kind") in column_kinds or mapping.get("x") == shared_x_header
+        )
         marker = dict(series.get("data", {}) or {})
         marker.update(series.get("marker_data", {}) or {})
         line = series.get("line_data") or {}
@@ -322,11 +362,11 @@ def _panel_wide_sheet(op: Any, panel: dict[str, Any], book: Any | None = None) -
             if key not in mapping:
                 continue
             header = mapping[key]
-            if shared_x_header:
+            if shared_x_header and uses_shared_x:
                 if key == "x":
                     actual[key] = header_index[shared_x_header]
                     continue
-                if series.get("kind") != "column":
+                if series.get("kind") not in column_kinds:
                     if key not in marker:
                         continue
                     actual[key] = add_column(header, list(marker[key]))
@@ -402,7 +442,8 @@ def build_reference_template(op: Any, spec: dict[str, Any]) -> tuple[list[Any], 
                 pass
         # page style is applied before the layer style so axis extents remain stable.
         apply_page_style(graph, style)
-        if any(series.get("kind") == "column" for series in panel.get("series", [])):
+        if any(series.get("kind") in {"column", "grouped_column", "bar"}
+               for series in panel.get("series", [])):
             # In a panel-wide column sheet each bar has one finite Y and NaN
             # placeholders at the other category rows.  Include those X
             # spacings when Origin computes the bar width.
@@ -789,6 +830,9 @@ def build_reference_template(op: Any, spec: dict[str, Any]) -> tuple[list[Any], 
                         plot_obj.color = color
                 except Exception:
                     pass
+        # Apply this after grouping and color restoration because grouping can
+        # recreate the bar plot objects on some Origin versions.
+        _apply_bar_gap(column_plots, style)
         # Do not rescale: the displayed limits are part of the reference style.
         for label in panel.get("labels", []):
             try:

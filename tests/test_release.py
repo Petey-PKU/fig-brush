@@ -35,7 +35,7 @@ def test_package_allowlist_excludes_private_and_unknown_assets(workspace_tmp: Pa
     root = tmp_path / "plugin"
     (root / ".codex-plugin").mkdir(parents=True)
     (root / ".codex-plugin" / "plugin.json").write_text(
-        json.dumps({"name": "fig-brush", "version": "0.3.2"}), encoding="utf-8"
+        json.dumps({"name": "fig-brush", "version": "0.3.3"}), encoding="utf-8"
     )
     (root / ".agents" / "plugins").mkdir(parents=True)
     (root / ".agents" / "plugins" / "marketplace.json").write_text(

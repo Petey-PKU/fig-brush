@@ -1,4 +1,4 @@
 """MCP server and deterministic inspection helpers for fig-brush."""
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 

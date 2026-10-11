@@ -1,12 +1,14 @@
 # fig-brush
 
-fig-brush is a Codex plugin and Python package for turning a scientific figure
-reference into an editable Origin project. It measures the visible composition
-of a screenshot, records a reviewable `TemplateSpec`, and creates an Origin
-workbook with clearly labelled visual placeholders that a researcher can
-replace with local values.
+fig-brush is a Codex plugin and Python package that works like a visual format
+brush for Origin. It reads the visible style of a scientific figure reference
+and produces a one-page `APPLY_FORMAT.md` guide plus a compact, reusable
+`format_parameters.json` bundle. A native Origin graph template (`.otpu`),
+style manifest, and editable `.opju` demo are optional exports. The user can
+apply the visual format to a compatible graph in their own Origin workbook
+without giving fig-brush their research data.
 
-**Version:** 0.3.2<br>
+**Version:** 0.3.3<br>
 **License:** [Apache License 2.0](LICENSE)  
 **Maintainer:** Petey Yu
 
@@ -17,20 +19,67 @@ not represent a paper, an experiment, or recovered research data.
 
 ## Workflow
 
-1. Give fig-brush a PNG or JPEG reference figure.
-2. Inspect the visible panels, axes, marks, labels, and legend and complete a
-   reference-only `TemplateSpec`.
-3. Prepare an editable template with placeholder worksheets.
-4. Optionally render the template through a locally installed Origin and
-   compare a PNG/SVG preview with the reference.
-5. Replace the placeholders with your own values in Origin and refit derived
-   traces using your own scientific method.
+The default workflow is deliberately small: one reference image in, one
+reviewable parameter bundle out. No CSV, XLSX, Origin project, or private
+research data is needed.
 
-The generated values are visual placeholders. They preserve visible ranges,
-marker counts, and layout cues; they are **not** the original measurements or
-the original paper's statistical results. A smooth line is treated as a
-candidate reconstruction hypothesis unless the user supplies evidence for its
-model.
+1. Give fig-brush a PNG or JPEG reference figure.
+2. Run `format-brush` (or call the `format_brush` MCP tool). It measures the
+   canvas, plot frame, axes, ticks, typography, and palette and writes two JSON
+   files plus a one-page `APPLY_FORMAT.md` instruction sheet.
+3. Open `APPLY_FORMAT.md` and follow its short Origin checklist. It points to
+   the values in `format_parameters.json`; `reference_analysis.json` is only
+   optional audit evidence. Keep your own data and statistics in Origin.
+4. If a native reusable `.otpu` is needed, pass a completed reference-only
+   `TemplateSpec` and `--render-origin`; this is an optional export step and
+   still does not read the user's data.
+
+For example:
+
+```powershell
+python scripts\origin_plot_cli.py format-brush reference.png output
+```
+
+If you already have an Origin project with your own graph, apply the generated
+format in one command. The input project is copied; it is never overwritten:
+
+```powershell
+python scripts\origin_plot_cli.py apply-format my_graph.opju output\format_parameters.json
+```
+
+Open the returned `my_graph_formatted.opju` to review the result. The same
+operation is available as the `apply_format` MCP tool. It changes page, layer,
+axis, and typography appearance while retaining the project's data, labels,
+axis limits, and series colours.
+
+For a no-script workflow, open the user's graph in Origin and ask Codex to
+“paste this format into the current Origin graph”. The `apply_active_format`
+MCP tool applies the parameter bundle to the active graph, keeps the project
+unsaved, and leaves the final Save action in Origin. If a native reference
+`.opju` is available, `stage_format_clipboard` can instead prepare Origin's
+own format clipboard so the user can switch graphs and use Origin's existing
+right-click **Paste Format** command.
+
+The existing lower-level inspection, data-compatibility, rendering, and
+verification commands remain available for older integrations, but they are
+not required for the format-brush workflow.
+
+The MCP server exposes the compact tools by default. Set
+`FIG_BRUSH_ENABLE_LEGACY_TOOLS=1` only when an older integration needs the
+data-driven or replacement tools.
+
+When native export is requested, fig-brush writes `result.opju` alongside the
+native template as a visual reference and editable demo; it is not the user's
+data file. The default `format-brush` path does not create an Origin project.
+The optional replacement bundle and `refresh_reference_template` tool are
+available when a researcher explicitly chooses to map local tables into the
+demo project.
+
+When native preview export is requested, any generated values are visual
+placeholders. They preserve visible ranges, marker counts, and layout cues;
+they are **not** the original measurements or the original paper's statistical
+results. A smooth line is treated as a candidate reconstruction hypothesis
+unless the user supplies evidence for its model.
 
 ## Quick start on Windows
 
@@ -38,9 +87,9 @@ Requirements:
 
 - Windows 10 or 11;
 - Python 3.10 or newer;
-- Origin 2021 or newer with a valid local license for native `.opju` rendering;
-- the `originpro` package installed in the same environment when native
-  rendering is needed.
+- Pillow and the Python dependencies installed by `scripts\setup.ps1`;
+- Origin 2021 or newer with a valid local license, plus `originpro` in the same
+  environment, only when native `.otpu`/`.opju` export is requested.
 
 From the repository root, run the setup script. It creates a versioned,
 per-user runtime under `%LOCALAPPDATA%\fig-brush\runtimes` (or `PLUGIN_DATA`
@@ -61,9 +110,9 @@ $python = .\scripts\ensure_runtime.ps1 -PluginRoot .
 ```
 
 The doctor returns `0` when the screenshot-template workflow is ready. A
-missing Origin installation is reported as an optional warning; pass
-`--require-origin` when a native `.opju` render is required. Use `--json` for
-machine-readable output.
+missing Origin installation is reported as an optional warning for the
+image/spec preparation path; pass `--require-origin` when native `.otpu` and
+`.opju` artifacts are required. Use `--json` for machine-readable output.
 
 To install a published GitHub release, download the matching
 `fig-brush-<version>.zip` asset and its `.sha256` sidecar, extract the archive,
@@ -128,7 +177,7 @@ research data:
 
 ```powershell
 .\scripts\cleanup_runtime.ps1
-.\scripts\cleanup_runtime.ps1 -Version 0.3.2 -Confirm
+.\scripts\cleanup_runtime.ps1 -Version 0.3.3 -Confirm
 ```
 
 Install the third-party `originpro` package according to the package's
@@ -142,9 +191,10 @@ package.
 
 fig-brush can preserve visible page and plot-frame geometry, axis scales and
 ticks, typography and rich text, legends, common line/scatter/column,
-histogram, box/violin, heatmap, pie/doughnut, and regression structures. It
-also supports explicit candidate fits such as linear, Boltzmann, and 4PL when
-the caller requests them.
+histogram, box/violin, heatmap, pie/doughnut, and regression structures in the
+graph template. It also supports explicit candidate fits such as linear,
+Boltzmann, and 4PL when the caller requests them; these are preview hypotheses
+and are not needed to use the visual template.
 
 It is a rendering bridge, not a universal scientific-figure recognizer. A
 screenshot alone does not establish the original numbers, fit algorithm,
@@ -155,7 +205,45 @@ multi-panel figures are outside the current boundary. See
 [`docs/capabilities.md`](docs/capabilities.md) for the maintained capability
 matrix.
 
-## Data handling and privacy
+The native path also includes an active-graph bridge for an Origin add-in: it
+can apply the generated visual parameters to the graph currently selected in
+Origin without opening, replacing, or saving the user's project. The bridge
+preserves data, labels, axis ranges, and statistics and leaves saving to the
+user. The optional one-click Origin extension described in
+[`docs/origin-one-click.md`](docs/origin-one-click.md) can expose that bridge as
+`Fig-brush → 粘贴参考格式` in the graph context menu.
+
+## Outputs and data handling
+
+The compact format-brush workflow has two JSON outputs and one human-facing
+apply sheet:
+
+| Output | Purpose | Contains user data? |
+| --- | --- | --- |
+| `format_parameters.json` | Directly usable, Origin-oriented page/layer/axis/plot style parameters | No |
+| `reference_analysis.json` | Auditable image measurements and confidence hints behind the parameters | No |
+| `APPLY_FORMAT.md` | One-page Origin checklist generated from the parameter file | No |
+
+When native export is explicitly requested, the output folder also contains:
+
+| Output | Purpose | Contains user data? |
+| --- | --- | --- |
+| `style_template.otpu` | Start a compatible Origin graph with the measured page, layer, axis, text, marker, line, column, and annotation styling | No |
+| `style_manifest.json` | Reviewable record of the visual decisions and any limits of the reconstruction | No |
+| `result.opju` and previews | Optional companion demo for inspecting the style with synthetic placeholder marks | No; placeholders only |
+
+Multi-panel references emit one `<Panel>_style.otpu` per Origin graph page;
+single-panel references use `style_template.otpu`.
+
+Origin graph templates store graph appearance and layout, with a compatible
+input and plot structure expected by the template. See OriginLab's
+[graph-template basics](https://docs.originlab.com/origin-help/graph-template-basics/)
+and [template elements](https://docs.originlab.com/origin-help/graph-template-elements/)
+for the native template model. Apply the generated template to a copy of the
+user's workbook first, then check data binding, plot roles, axis ranges, and
+categorical order for the chosen graph family. A mixed summary-and-raw-point
+figure needs explicit role mapping when the user's workbook uses different
+columns or plot layers.
 
 The screenshot-template workflow does not upload a private dataset and does
 not require one: it creates synthetic placeholder values from the visible
@@ -164,15 +252,20 @@ Codex host/model according to that host's policies, so this project should not
 be described as universally offline. Review your host's data controls before
 using sensitive images.
 
-The generated workbook is intended for local replacement. An older
-compatibility/data-inspection tool can read a CSV or XLSX path explicitly
-provided by the user; that path is not read by the screenshot-only template
-workflow. Do not commit private CSV, XLSX, PNG, PDF, or `.opju` files.
+An optional compatibility/data-inspection path can read a CSV or XLSX path
+explicitly provided by the user. The optional replacement bundle uses
+conventional `Raw_Data.csv`, `Summary_Data.csv`, or `XY_Data.csv` files and is
+documented in [`docs/data-contract.md`](docs/data-contract.md). That path is a
+convenience for users who want local data mapping; it is not required to obtain
+or apply the visual format brush. Do not commit private CSV, XLSX, PNG, PDF, or
+`.opju` files.
 
 ## Documentation
 
 - [Installation and MCP setup](docs/installation.md)
+- [Visual format-brush workflow](docs/format-brush.md)
 - [Scientific reconstruction contract](docs/scientific-reconstruction.md)
+- [Replacement data contract](docs/data-contract.md)
 - [Capability matrix and known limits](docs/capabilities.md)
 - [Supported graph families](docs/supported_graphs.md)
 - [Text layout](docs/text-layout.md)

@@ -1,7 +1,7 @@
 {
   "name": "fig-brush",
-  "version": "0.3.2",
-  "description": "Analyze a scientific plot screenshot and create an editable Origin template with replaceable local placeholder data.",
+  "version": "0.3.3",
+  "description": "Turn a scientific plot screenshot into reusable Origin format parameters and an optional graph template.",
   "license": "Apache-2.0",
   "keywords": ["scientific-figures", "origin", "plot-template", "mcp", "skill"],
   "author": {
@@ -10,13 +10,12 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "fig-brush",
-    "shortDescription": "Create editable Origin templates from scientific plot screenshots.",
-    "longDescription": "fig-brush reads a reference figure, records its visual structure, creates transparent placeholder data, and uses a local Origin installation to create an editable .opju template. The screenshot workflow does not upload files from the local MCP process; compatibility data tools can read CSV/XLSX paths explicitly supplied by the user.",
+    "shortDescription": "Extract reusable Origin styling from a reference image.",
+    "longDescription": "Give fig-brush one PNG or JPEG reference. It writes a one-page APPLY_FORMAT.md guide plus a compact, reviewable format_parameters.json and reference_analysis.json. With Origin already open, apply_active_format can paste the visual bundle into the active graph without a script; a native reference .opju can be staged for Origin's built-in right-click Paste Format. If the user already has an Origin .opju, apply-format creates a styled copy without overwriting the source; an .otpu template remains optional. It never requires or includes the user's research data.",
     "developerName": "Petey Yu",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Create an editable Origin template from my scientific plot screenshot; I will replace the clearly mapped placeholder data locally."
+    "defaultPrompt": "Analyze this scientific plot reference and create reusable Origin format parameters. Generate APPLY_FORMAT.md, then prefer applying the bundle to the user's already open Origin graph through apply_active_format when requested. If a native reference .opju is provided, stage its native format clipboard so the user can use Origin's right-click Paste Format. Keep placeholder data out of the deliverable."
   },
   "mcpServers": "./.mcp.json"
 }
-

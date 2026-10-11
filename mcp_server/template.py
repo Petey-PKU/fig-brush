@@ -12,9 +12,11 @@ from PIL import Image
 
 from .curve_fitting import fit_marker_curve
 from .paths import InputValidationError, resolve_input, sha256_file, write_json
+from .replacement import build_replacement_bundle
 
 
 PROVENANCE = "Visual placeholder reconstructed from the reference image; not original research data."
+STYLE_MANIFEST_SCHEMA_VERSION = "1.0"
 # Pie families are kept explicit so a reader can distinguish a flat 2-D
 # composition chart from a perspective/3-D rendering.  They still share the
 # same editable categorical X + numeric Y data contract.
@@ -38,6 +40,112 @@ _DEFAULT_PLACEHOLDER_POLICY = {
 }
 _PLACEHOLDER_POLICY_KEYS = set(_DEFAULT_PLACEHOLDER_POLICY)
 _PLACEHOLDER_MODES = {"approximate_visual", "exact"}
+
+
+def build_style_manifest(spec: dict[str, Any]) -> dict[str, Any]:
+    """Extract the screenshot's visual contract without copying any data.
+
+    The native Origin template is the executable style artifact.  This small
+    JSON sidecar is deliberately data-free: it gives callers and future
+    adapters a stable description of the page geometry, axis treatment,
+    annotations, and per-series appearance without requiring the placeholder
+    values from ``TemplateSpec``.  It is therefore safe to hand to a user as
+    the format-brush audit trail or to use when translating the style to a
+    different plotting backend.
+    """
+    canvas = spec.get("canvas", {})
+    style = spec.get("style", {})
+    panels: list[dict[str, Any]] = []
+    width = float(canvas.get("width_px", 0) or 0)
+    height = float(canvas.get("height_px", 0) or 0)
+    for panel in spec.get("panels", []):
+        frame = list(panel.get("frame_px", []))
+        frame_fraction = None
+        if len(frame) == 4 and width > 0 and height > 0:
+            frame_fraction = {
+                "left": frame[0] / width,
+                "top": frame[1] / height,
+                "right": frame[2] / width,
+                "bottom": frame[3] / height,
+            }
+        axes: dict[str, Any] = {}
+        for axis_name in ("x", "y"):
+            axis = panel.get("axes", {}).get(axis_name, {}) or {}
+            # Axis bounds are included as reference geometry, while the
+            # actual observations remain intentionally absent.
+            axes[axis_name] = {
+                key: deepcopy(axis[key])
+                for key in (
+                    "min", "max", "scale", "title", "ticks", "minor_ticks", "log_base",
+                    "major_tick_increment", "major_tick_count", "minor_tick_count",
+                    "show_labels", "decimals", "tick_label_format", "tick_direction",
+                )
+                if key in axis
+            }
+        series_styles: list[dict[str, Any]] = []
+        for series in panel.get("series", []) or []:
+            item = {
+                "id": series.get("id"),
+                "name": series.get("name", series.get("id")),
+                "kind": series.get("kind"),
+                "role": series.get("role", series.get("kind")),
+                "style": deepcopy(series.get("style", {}) or {}),
+            }
+            # A fit model is a scientific/data operation, not a visual style.
+            # Keep the visible role and plot style above, but leave model
+            # selection and refitting to the user's own analysis.
+            series_styles.append(item)
+        panel_item: dict[str, Any] = {
+            "id": panel.get("id"),
+            "graph_family": panel.get("graph_family"),
+            "frame_px": frame,
+            "frame_fraction": frame_fraction,
+            "style": deepcopy(panel.get("style", {}) or {}),
+            "axes": axes,
+            "legend": deepcopy(panel.get("legend", {}) or {}),
+            "labels": deepcopy(panel.get("labels", []) or []),
+            "annotations": deepcopy(panel.get("annotations", []) or []),
+            "series": series_styles,
+        }
+        # Heatmaps have no series list; retain only visual matrix settings.
+        matrix = panel.get("matrix")
+        if isinstance(matrix, dict):
+            panel_item["matrix"] = {
+                key: deepcopy(matrix[key])
+                for key in ("name", "colormap", "reverse", "interpolation", "show_color_scale")
+                if key in matrix
+            }
+        panels.append(panel_item)
+    return {
+        "schema_version": STYLE_MANIFEST_SCHEMA_VERSION,
+        "kind": "origin_visual_style",
+        "source_mode": "reference_image_only",
+        "style_only": True,
+        "data_policy": {
+            "private_data_requested": False,
+            "original_data_recovered": False,
+            "provenance": PROVENANCE,
+        },
+        "canvas": {
+            key: deepcopy(canvas[key])
+            for key in ("width_px", "height_px", "font_reference_px", "font_anchor_pt")
+            if key in canvas
+        },
+        "page_style": deepcopy(style),
+        "panels": panels,
+        "application": {
+            "origin_artifact": "style_template.otpu",
+            "recommended_flow": "In Origin, select compatible columns from the user's workbook, create a graph from the template, then verify bindings and ranges.",
+            "template_type": "standard_graph_template",
+            "requires_origin": True,
+            "data_required_to_read": False,
+            "preserves_user_data": True,
+            "reference_text_is_visual_placeholder": True,
+            "replace_before_publication": ["axis_ranges", "reference annotations and P values", "legend labels", "uncertainty/statistical meaning"],
+            "compatibility_note": "A standard .otpu transfers page/layer/axis/plot styles and style holders. Mixed summary-plus-replicate figures may require selecting matching plot roles or adjusting data bindings in Origin.",
+            "placeholder_project": "result.opju",
+        },
+    }
 
 
 def _normalise_placeholder_policy(spec: dict[str, Any]) -> dict[str, Any]:
@@ -479,6 +587,7 @@ def prepare_template(image_path: str, template_spec: dict, output_dir: str) -> d
                 "provenance": PROVENANCE,
             })
         panel_series = panel.get("series", [])
+        column_kinds = {"column", "grouped_column", "bar"}
         # Put every multi-series panel, and every marker-plus-fit panel, on a
         # single worksheet with repeated X/Y pairs.  This leaves the user a
         # compact, readable replacement surface while keeping fitted traces
@@ -499,8 +608,15 @@ def prepare_template(image_path: str, template_spec: dict, output_dir: str) -> d
                 for series in panel_series
             ]
             same_x = bool(x_sources and x_sources[0]) and all(values == x_sources[0] for values in x_sources[1:])
-            if any(series.get("kind") == "column" for series in panel_series) or same_x:
+            if any(series.get("kind") in column_kinds for series in panel_series) or same_x:
                 panel["shared_x_header"] = f"{panel['id']}_X"
+        # Native categorical columns need one common X grid so Origin can
+        # calculate bar widths and grouped offsets. Marker/line series in a
+        # mixed panel, however, must keep their own X values; forcing them
+        # onto the categorical grid collapses nearby observations onto bar
+        # centers. Keep this distinction local to the panel and let the
+        # builder reuse the shared column only for the series that need it.
+        shared_x_for_all = panel_wide and bool(x_sources and x_sources[0]) and same_x
         for series in panel_series:
             series.setdefault("provenance", PROVENANCE)
             if panel_wide:
@@ -509,7 +625,9 @@ def prepare_template(image_path: str, template_spec: dict, output_dir: str) -> d
                 # derived FitLower/FitUpper columns are not lost.
                 wide.update(series.get("wide_columns", {}) or {})
                 series["wide_columns"] = wide
-                if panel.get("shared_x_header"):
+                if panel.get("shared_x_header") and (
+                    shared_x_for_all or series.get("kind") in column_kinds
+                ):
                     wide["x"] = panel["shared_x_header"]
                 series["data_worksheet"] = panel["data_worksheet"]
                 series["worksheet"] = panel["data_worksheet"]
@@ -588,14 +706,27 @@ def prepare_template(image_path: str, template_spec: dict, output_dir: str) -> d
                 "layout_resolution": deepcopy(spec.get("layout_resolution", {})), "series": mapping,
                 "replacement": "Paste your locally processed values into the matching columns in the same Reference Data book. Multi-series panels use one worksheet with parallel X/Y columns; FitX/FitY and FitLower/FitUpper are candidate derived traces to regenerate after replacement. Keep X/Y/error roles; clear obsolete rows if the replacement is shorter. Axis limits are fixed to the reference until you rescale them.",
                 "annotations": "Reference statistics and fitted curves are visual placeholders. Replace these using your own results; the plugin does not infer their scientific meaning."}
+    replacement_bundle = build_replacement_bundle(spec, output)
+    manifest["replacement_contract"] = replacement_bundle["contract"]
+    manifest["replacement_files"] = replacement_bundle["files"]
+    style_manifest = build_style_manifest(spec)
+    # Keep this sidecar independent from the data manifest: a format-brush
+    # consumer should be able to read the visual contract without opening the
+    # placeholder workbook or exposing any marker values.
+    write_json(output / "style_manifest.json", style_manifest)
     write_json(output / "template_spec.json", spec)
     write_json(output / "data_manifest.json", manifest)
-    (output / "替换数据说明.md").write_text(_replacement_guide(manifest), encoding="utf-8")
+    (output / "替换数据说明.md").write_text(
+        _replacement_guide(manifest, replacement_bundle), encoding="utf-8"
+    )
     return {"status": "prepared", "spec": spec, "manifest": manifest,
-            "template_spec": str(output / "template_spec.json"), "data_manifest": str(output / "data_manifest.json")}
+            "template_spec": str(output / "template_spec.json"), "data_manifest": str(output / "data_manifest.json"),
+            "style_manifest": str(output / "style_manifest.json"),
+            "replacement_contract": replacement_bundle["contract_path"],
+            "replacement_files": replacement_bundle["files"]}
 
 
-def _replacement_guide(manifest: dict) -> str:
+def _replacement_guide(manifest: dict, replacement_bundle: dict[str, Any] | None = None) -> str:
     books = {str(item.get("book", manifest.get("data_book", "Reference Data"))) for item in manifest.get("series", [])}
     if len(books) > 1:
         location = "、".join(sorted(books))
@@ -609,7 +740,15 @@ def _replacement_guide(manifest: dict) -> str:
                        f"拟合轨迹默认使用 {policy.get('fit_dense_points', 120)} 个点；坐标范围和可见 marker 数量保持不变。")
     else:
         policy_note = "当前采用 exact 占位策略，保留调用方提供的数值精度；这些数值仍不是原始实验数据。"
-    lines = ["# Origin 风格模板：替换数据", "", "只需截图即可创建本模板。所有数值均为用于复现外观的示例，不是原始实验数据。", policy_note, "",
+    replacement_files = (replacement_bundle or {}).get("files", {})
+    input_note = (
+        "优先编辑生成的常规输入表："
+        + ", ".join(f"`{Path(path).name}`" for path in replacement_files.values())
+        + "，然后调用 `refresh_reference_template` 生成更新后的 OPJU。它们按科研输入组织；Origin 内部的 Derived Plot Data 只负责分类索引、抖动 X 和绘图绑定。"
+        if replacement_files else
+        "当前图没有可识别的常规输入表；请按下方映射表替换。"
+    )
+    lines = ["# Origin 风格模板：替换数据", "", "只需截图即可创建本模板。所有数值均为用于复现外观的示例，不是原始实验数据。", policy_note, "", input_note,
              opening + "同一 panel 的多组 X/Y 已并列放在同一页，环形图还可替换 ColorRGB 列中的 Origin RGB 整数。行数减少时清空末尾旧值。曲线直接关联工作表，无需重新设定样式。FitLower/FitUpper 是拟合均值的候选置信带上下界，替换数据后应按自己的模型和统计方法重新计算。", "",
              "| 图中对象 | 颜色 | Book | 工作表 | 列对应 | 点数 |", "|---|---|---|---|---|---|"]
     for item in manifest["series"]:
@@ -652,9 +791,16 @@ def verify_template(output_dir: str) -> dict:
     from origin_bridge.connection import OriginBridgeError, OriginUnavailableError, open_origin_project
     output = Path(output_dir).expanduser().resolve()
     checks: list[dict[str, Any]] = []
-    spec_path, manifest_path, project_path = output / "template_spec.json", output / "data_manifest.json", output / "result.opju"
-    for name, path in (("template_spec", spec_path), ("data_manifest", manifest_path), ("origin_project", project_path)):
+    spec_path = output / "template_spec.json"
+    manifest_path = output / "data_manifest.json"
+    style_manifest_path = output / "style_manifest.json"
+    project_path = output / "result.opju"
+    style_template_paths = sorted(output.glob("style_template.otpu")) + sorted(output.glob("*_style.otpu"))
+    for name, path in (("template_spec", spec_path), ("data_manifest", manifest_path),
+                       ("style_manifest", style_manifest_path), ("origin_project", project_path)):
         checks.append({"name": name + "_exists", "passed": path.is_file(), "path": str(path)})
+    checks.append({"name": "style_template_exists", "passed": bool(style_template_paths),
+                   "paths": [str(path) for path in style_template_paths]})
     previews = [output / "preview.png", output / "preview.svg"]
     checks.append({"name": "preview_exists", "passed": any(p.is_file() for p in previews), "paths": [str(p) for p in previews]})
     if spec_path.is_file() and manifest_path.is_file():
@@ -670,6 +816,14 @@ def verify_template(output_dir: str) -> dict:
             checks.append({"name": "series_mapping_complete", "passed": len(manifest.get("series", [])) == expected_mapping})
         except Exception as exc:
             checks.append({"name": "template_spec_valid", "passed": False, "details": str(exc)})
+    if style_manifest_path.is_file():
+        try:
+            style_manifest = __import__("json").loads(style_manifest_path.read_text(encoding="utf-8"))
+            checks.append({"name": "style_manifest_valid",
+                           "passed": style_manifest.get("kind") == "origin_visual_style"
+                           and style_manifest.get("style_only") is True})
+        except Exception as exc:
+            checks.append({"name": "style_manifest_valid", "passed": False, "details": str(exc)})
     if project_path.is_file():
         try:
             op = open_origin_project(str(project_path), show=False)

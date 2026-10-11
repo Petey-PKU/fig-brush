@@ -19,12 +19,11 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 
 EXPECTED_TOOLS = {
+    "format_brush",
+    "apply_format",
+    "apply_active_format",
+    "stage_format_clipboard",
     "inspect_reference_tool",
-    "inspect_dataset_tool",
-    "infer_plot_spec_tool",
-    "render_origin_project_tool",
-    "verify_origin_project_tool",
-    "export_origin_preview_tool",
     "origin_status_tool",
     "prepare_reference_template_tool",
     "compare_reference_tool",
